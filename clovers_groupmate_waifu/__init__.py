@@ -4,7 +4,7 @@ import time
 from clovers_apscheduler import scheduler
 from pathlib import Path
 from io import BytesIO
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from clovers.utils.tools import download_url
 from clovers.core.plugin import Plugin, Result
 from .clovers import Event
@@ -44,6 +44,7 @@ waifu_data = DataBase.load(waifu_data_file)
 
 record = waifu_data.record
 protect_uids = waifu_data.protect_uids
+user_data = waifu_data.user_data
 
 plugin = Plugin(build_event=lambda event: Event(event), build_result=build_result)
 if config_data.waifu_reset:
@@ -105,52 +106,81 @@ async def _(event: Event):
     return "\n".join(user.nickname for user in await event.group_mamber_info() if user.user_id in waifu_data.protect_uids)
 
 
-happy_end_tips = [
-    "好耶~",
-    "婚礼？启动！",
-    "需要咱主持婚礼吗qwq",
-    "不许秀恩爱！",
-    "(响起婚礼进行曲♪)",
-    "比翼从此添双翅，连理于今有合枝。\n琴瑟和鸣鸳鸯栖，同心结结永相系。",
-    "金玉良缘，天作之合，郎才女貌，喜结同心。",
-    "繁花簇锦迎新人，车水马龙贺新婚。",
-    "乾坤和乐，燕尔新婚。",
-    "愿天下有情人终成眷属。",
-    "花团锦绣色彩艳，嘉宾满堂话语喧。",
-    "火树银花不夜天，春归画栋双栖燕。",
-    "红妆带绾同心结，碧树花开并蒂莲。",
-    "一生一世两情相悦，三世尘缘四世同喜",
-    "玉楼光辉花并蒂，金屋春暖月初圆。",
-    "笙韵谱成同生梦，烛光笑对含羞人。",
-    "祝你们百年好合,白头到老。",
-    "祝你们生八个。",
-]
+happy_end_tips = config_data.happy_end_tips
+bad_end_tips = config_data.bad_end_tips
+waifu_he = config_data.waifu_he
+waifu_be = waifu_he + config_data.waifu_be
+waifu_ntr = config_data.waifu_ntr
+waifu_last_sent_time_filter = config_data.waifu_last_sent_time_filter
 
 
-@plugin.handle({"娶群友"}, {"group_id", "user_id", "nickname", "at", "group_mamber_info"})
+@plugin.handle({"娶群友"}, {"group_id", "user_id", "nickname", "avatar", "at", "group_mamber_info"})
 async def _(event: Event):
     group_id = event.group_id
-    record_couple = record.setdefault(group_id, GroupData()).record_couple
+    user_id = event.user_id
+    group_record = record.setdefault(group_id, GroupData())
+    record_couple = group_record.record_couple
+    record_lock = group_record.record_lock
 
     def end(tips: str, avatar: bytes | None):
-        return [f"{tips}", BytesIO(avatar) if avatar else "None"]
+        return [tips, BytesIO(avatar) if avatar else "None"]
 
     if event.at:
         waifu_id = event.at[0]
-        if couple_id := record_couple.get(event.user_id):
-            waifu = waifu_data.user_data[couple_id]
+        if couple_id := record_couple.get(user_id):
+            waifu = user_data[couple_id]
+            if couple_id == waifu_id:
+                tips = random.choice(happy_end_tips)
+                record_lock[user_id] = couple_id
+            else:
+                tips = "你已经有CP了，不许花心哦~"
             avatar = await download_url(waifu.avatar)
-            tips = random.choice(happy_end_tips) if couple_id == waifu_id else "你已经有CP了，不许花心哦~"
+            return end(f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
         elif waifu_id in waifu_data.protect_uids:
             return
         elif waifus_waifu_id := record_couple.get(waifu_id):
-            waifus_waifu = waifu_data.user_data[waifus_waifu_id]
+            waifus_waifu = user_data[waifus_waifu_id]
             avatar = await download_url(waifus_waifu.avatar)
             return end(f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
+        else:
+            randvalue = random.randint(1, 100)
+            if randvalue <= waifu_he:
+                waifu_data.update_nickname(await event.group_mamber_info(), group_id)
+                waifu = waifu_data.user_data[waifu_id]
+                avatar = await download_url(waifu.avatar)
+                record_lock[user_id] = waifu_id
+                record_couple[user_id] = waifu_id
+                record_couple[waifu_id] = user_id
+                return end(f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+            elif randvalue <= waifu_be:
+                record_couple[user_id] = user_id
+            avatar = await download_url(event.avatar)
+            return end(f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。", avatar)
     else:
-        info_list = await event.group_mamber_info()
-        # 更新一下用户数据库
-        waifu_data.user_data
+        if couple_id := record_couple.get(user_id):
+            waifu = user_data[couple_id]
+            if couple_id == waifu_id:
+                tips = random.choice(happy_end_tips)
+                record_lock[user_id] = couple_id
+            else:
+                tips = "你已经有CP了，不许花心哦~"
+            avatar = await download_url(waifu.avatar)
+            return end(f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
+
+        # 更新储存的用户名
+        waifu_data.update_nickname(await event.group_mamber_info(), group_id)
+        last_time = time.time() - waifu_last_sent_time_filter
+        exclusion = set(record_couple.keys()) | protect_uids
+
+        def condition(user: User):
+            last_sent_time = user.last_sent_time
+            if last_sent_time != 0 and last_sent_time < last_time:
+                return False
+            if user.user_id in exclusion:
+                return False
+            return True
+
+        waifu_id = random.choice([user_id for user_id, user in user_data.items() if condition(user)])
 
 
 waifu_cd_bye = config_data.waifu_cd_bye

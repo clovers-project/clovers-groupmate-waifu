@@ -35,6 +35,14 @@ class DataBase(BaseModel):
     "保护名单"
     user_data: dict[str, User] = {}
 
+    def update_nickname(self, user_list: list[User], group_id):
+        for user in user_list:
+            if user.user_id in self.user_data:
+                self.user_data[user.user_id].group_nickname_dict[group_id] = user.nickname
+            else:
+                user.group_nickname_dict[group_id] = user.nickname
+                self.user_data[user.user_id] = user
+
     @classmethod
     def load(cls, path: str | Path):
         file = Path(path)
