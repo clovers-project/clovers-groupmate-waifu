@@ -32,9 +32,8 @@ class User(BaseModel):
 class DataBase(BaseModel):
     record: dict[str, GroupData] = {}
     protect_uids: set[str] = set()
-    user_data: dict[str, User] = {}
-
     "保护名单"
+    user_data: dict[str, User] = {}
 
     @classmethod
     def load(cls, path: str | Path):

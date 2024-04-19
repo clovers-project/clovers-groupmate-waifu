@@ -148,8 +148,9 @@ async def _(event: Event):
             avatar = await download_url(waifus_waifu.avatar)
             return end(f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
     else:
-        member = await event.group_mamber_info()
+        info_list = await event.group_mamber_info()
         # 更新一下用户数据库
+        waifu_data.user_data
 
 
 waifu_cd_bye = config_data.waifu_cd_bye
