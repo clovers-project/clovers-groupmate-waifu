@@ -12,15 +12,28 @@ class GroupData(BaseModel):
     """CP记录"""
     record_lock: dict[str, str] = {}
     """CP锁定记录"""
-    record_yinpa1: Counter[str] = {}
+    record_yinpa1: Counter[str] = Counter()
     """银趴主动记录"""
-    record_yinpa0: Counter[str] = {}
+    record_yinpa0: Counter[str] = Counter()
     """银趴被动记录"""
 
 
+class User(BaseModel):
+    user_id: str
+    nickname: str
+    avatar: str
+    last_sent_time: int = 0
+    group_nickname_dict: dict[str, str] = {}
+
+    def group_nickname(self, group_id: str):
+        return self.group_nickname.get(group_id, self.nickname)
+
+
 class DataBase(BaseModel):
-    waifu_data: dict[str, GroupData] = {}
-    protect_uids: set = set()
+    record: dict[str, GroupData] = {}
+    protect_uids: set[str] = set()
+    user_data: dict[str, User] = {}
+
     "保护名单"
 
     @classmethod

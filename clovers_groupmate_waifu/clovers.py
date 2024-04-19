@@ -1,11 +1,5 @@
 from clovers.core.plugin import Event as CloversEvent
-from pydantic import BaseModel
-
-
-class User(BaseModel):
-    user_id: str
-    nickname: str
-    avatar: str
+from .data import User
 
 
 class Event:
@@ -40,6 +34,11 @@ class Event:
     def avatar(self) -> str:
         return self.event.kwargs["avatar"]
 
-    @property
-    def group_mamber_info(self) -> list[User]:
-        return self.event.kwargs["group_mamber_info"]
+    async def group_mamber_info(self) -> list[User]:
+        func = self.event.kwargs.get("group_mamber_info")
+        if func and (user_list := await func()):
+            try:
+                return [User.model_validate(user) for user in user_list]
+            except Exception as e:
+                print(e)
+        return []
