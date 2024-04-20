@@ -21,12 +21,13 @@ class GroupData(BaseModel):
 class User(BaseModel):
     user_id: str
     nickname: str
+    card: str
     avatar: str
     last_sent_time: int = 0
     group_nickname_dict: dict[str, str] = {}
 
     def group_nickname(self, group_id: str):
-        return self.group_nickname.get(group_id, self.nickname)
+        return self.group_nickname_dict.get(group_id, self.nickname)
 
 
 class DataBase(BaseModel):
@@ -35,12 +36,12 @@ class DataBase(BaseModel):
     "保护名单"
     user_data: dict[str, User] = {}
 
-    def update_nickname(self, user_list: list[User], group_id):
+    def update_nickname(self, user_list: list[User], group_id: str):
         for user in user_list:
             if user.user_id in self.user_data:
-                self.user_data[user.user_id].group_nickname_dict[group_id] = user.nickname
+                self.user_data[user.user_id].group_nickname_dict[group_id] = user.card
             else:
-                user.group_nickname_dict[group_id] = user.nickname
+                user.group_nickname_dict[group_id] = user.card
                 self.user_data[user.user_id] = user
 
     @classmethod
@@ -54,6 +55,6 @@ class DataBase(BaseModel):
         return data
 
     def save(self, path: str | Path):
-        Path(path).parent.mkdir(exist_ok=True)
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w", encoding="utf8") as f:
             f.write(self.model_dump_json(indent=4))

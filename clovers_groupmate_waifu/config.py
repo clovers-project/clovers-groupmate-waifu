@@ -3,6 +3,25 @@ from pathlib import Path
 
 
 class Config(BaseModel):
+    fontname: str = "simsun"
+    fallback_fonts: list[str] = [
+        "Arial",
+        "Tahoma",
+        "Microsoft YaHei",
+        "Segoe UI",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Helvetica Neue",
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "Source Han Sans SC",
+        "Noto Sans SC",
+        "Noto Sans CJK JP",
+        "WenQuanYi Micro Hei",
+        "Apple Color Emoji",
+        "Noto Color Emoji",
+    ]
+
     waifu_path: str = str(Path("./data/waifu/").absolute())
     """文件记录存档路径"""
     waifu_reset: bool = True
@@ -15,7 +34,7 @@ class Config(BaseModel):
     """指定失败概率"""
     waifu_ntr: int = 50
     """NTR概率"""
-    happy_end_tips = [
+    happy_end_tips: list[str] = [
         "好耶~",
         "婚礼？启动！",
         "需要咱主持婚礼吗qwq",
@@ -36,7 +55,7 @@ class Config(BaseModel):
         "祝你们生八个。",
     ]
     """成功提示列表"""
-    bad_end_tips = [
+    bad_end_tips: list[str] = [
         "你没有娶到群友，强者注定孤独，加油！",
         "找不到对象.jpg",
         "雪花飘飘北风萧萧～天地一片苍茫。",
@@ -50,8 +69,7 @@ class Config(BaseModel):
         "智者不入爱河，寡王一路硕博",
     ]
     """失败提示列表"""
-
+    waifu_last_sent_time_filter: int = 2592000
     yinpa_he: int = 50
     yinpa_be: int = 0
     yinpa_cp: int = 80
-    waifu_last_sent_time_filter: int = 2592000
