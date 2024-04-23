@@ -112,16 +112,8 @@ text_to_png: Callable[[str], BytesIO]
 text_to_png = lambda text: linecard_to_png(text, font_manager, font_size=40, bg_color="white")
 waifu_result: Callable[[str | int, str, bytes | None], list]
 waifu_result = lambda user_id, tips, avatar: [Result("at", user_id), tips, BytesIO(avatar) if avatar else "None"]
-
-
-def locked_check(lock_data: dict[str, str], uid0: str, uid1: str):
-    uid0_locked = lock_data.get(uid0)
-    if uid0_locked != uid1:
-        return False
-    uid1_locked = lock_data.get(uid1)
-    if uid1_locked != uid1:
-        return False
-    return True
+locked_check: Callable[[dict[str, str], str, str], bool]
+locked_check = lambda lock_data, uid0, uid1: lock_data.get(uid0) == uid1 and lock_data.get(uid1) == uid0
 
 
 happy_end_tips = config_data.happy_end_tips
@@ -216,11 +208,11 @@ async def _(event: Event):
             waifu_data.update_nickname(await event.group_member_list(), group_id)
             waifu = random.choice(waifu_list(set(record_couple.keys())))
             waifu_id = waifu.user_id
+            record_couple[user_id] = waifu_id
+            record_couple[waifu_id] = user_id
+            waifu_data.save(waifu_data_file)
         else:
             waifu = user_data[waifu_id]
-        record_couple[user_id] = waifu_id
-        record_couple[waifu_id] = user_id
-        waifu_data.save(waifu_data_file)
         tips = f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}"
     avatar = await download_url(waifu.avatar)
     return waifu_result(user_id, tips, avatar)
