@@ -140,9 +140,10 @@ async def _(event: Event):
     record_couple = group_record.record_couple
     record_lock = group_record.record_lock
 
-    def end(tips: str, avatar: bytes | None):
+    def end(user_id: str | int, tips: str, avatar: bytes | None):
+
         waifu_data.save(waifu_data_file)
-        return [tips, BytesIO(avatar) if avatar else "None"]
+        return [Result("at", user_id), tips, BytesIO(avatar) if avatar else "None"]
 
     if event.at:
         waifu_id = event.at[0]
@@ -162,17 +163,17 @@ async def _(event: Event):
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
                 waifu_data.save(waifu_data_file)
-                return end(f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+                return end(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
             else:
                 tips = "你已经有CP了，不许花心哦~"
             avatar = await download_url(waifu.avatar)
-            return end(f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
+            return end(user_id, f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
         elif waifu_id in waifu_data.protect_uids:
             return
         elif waifus_waifu_id := record_couple.get(waifu_id):
             waifus_waifu = user_data[waifus_waifu_id]
             avatar = await download_url(waifus_waifu.avatar)
-            return end(f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
+            return end(user_id, f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
         else:
             randvalue = random.randint(1, 100)
             if randvalue <= waifu_he:
@@ -182,22 +183,23 @@ async def _(event: Event):
                 record_lock[user_id] = waifu_id
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
-                return end(f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+                return end(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
             elif randvalue <= waifu_be:
                 record_couple[user_id] = user_id
             avatar = await download_url(event.avatar)
-            return end(f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。", avatar)
+            return end(user_id, f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。", avatar)
     else:
         waifu_id = record_couple.get(user_id)
         if not waifu_id:
             waifu_data.update_nickname(await event.group_member_list(), group_id)
             waifu = random.choice(waifu_list(set(record_couple.keys())))
+            waifu_id = waifu.user_id
         else:
             waifu = user_data[waifu_id]
         record_couple[user_id] = waifu_id
         record_couple[waifu_id] = user_id
         avatar = await download_url(waifu.avatar)
-        return end(f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+        return end(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
 
 
 @plugin.handle({"查看娶群友卡池"}, {"group_id"})
