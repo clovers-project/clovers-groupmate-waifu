@@ -275,7 +275,7 @@ async def _(event: Event):
     return result
 
 
-@plugin.handle({"查看娶群友卡池"}, {"group_id"})
+@plugin.handle({"查看娶群友卡池"}, {"group_id"}, {"group_member_list"})
 async def _(event: Event):
     group_id = event.group_id
     record_couple = record.setdefault(group_id, GroupData()).record_couple
