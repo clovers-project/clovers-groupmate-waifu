@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "clovers-groupmate-waifu"
-version = "0.1.0"
+version = "0.1.0r1"
 description = ""
 authors = ["KarisAya <1048827424@qq.com>"]
 readme = "README.md"
