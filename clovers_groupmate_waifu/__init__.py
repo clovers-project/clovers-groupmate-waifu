@@ -69,7 +69,7 @@ async def _(event: Event):
     return "娶群友记录已重置"
 
 
-@plugin.handle({"设置娶群友保护"}, {"permission", "nickname", "user_id", "at", "group_member_list"})
+@plugin.handle({"设置娶群友保护"}, {"permission", "nickname", "user_id", "at"}, {"group_member_list"})
 async def _(event: Event):
     if not event.at:
         protect_uids.add(event.user_id)
@@ -98,7 +98,7 @@ async def _(event: Event):
         return f"解除保护成功！"
 
 
-@plugin.handle({"查看娶群友保护名单"}, {"user_id", "group_member_list"})
+@plugin.handle({"查看娶群友保护名单"}, {"user_id"}, {"group_member_list"})
 async def _(event: Event):
     return "\n".join(user.nickname for user in await event.group_member_list() if user.user_id in waifu_data.protect_uids)
 
@@ -143,7 +143,7 @@ def waifu_list(exclusion: set[str]):
     return [user for user in user_data.values() if condition(user)]
 
 
-@plugin.handle({"娶群友"}, {"group_id", "user_id", "nickname", "avatar", "at", "group_member_list"})
+@plugin.handle({"娶群友"}, {"group_id", "user_id", "nickname", "avatar", "at"}, {"group_member_list"})
 async def _(event: Event):
     group_id = event.group_id
     user_id = event.user_id
@@ -239,12 +239,12 @@ async def _(event: Event):
     return text_to_png("\n".join(output))
 
 
-@plugin.handle({"透群友"}, {"group_id", "user_id", "at", "group_member_list"})
+@plugin.handle({"透群友"}, {"group_id", "user_id", "at"}, {"group_member_list"})
 async def _(event: Event):
     pass
 
 
-@plugin.handle({"透群友记录", "色色记录", "涩涩记录"}, {"group_id", "user_id", "at", "group_member_list"})
+@plugin.handle({"透群友记录", "色色记录", "涩涩记录"}, {"group_id", "user_id", "at"}, {"group_member_list"})
 async def _(event: Event):
     pass
 
