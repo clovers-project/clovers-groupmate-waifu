@@ -1,10 +1,9 @@
 import random
-import asyncio
 import time
 from clovers_apscheduler import scheduler
 from pathlib import Path
 from io import BytesIO
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 from clovers.utils.tools import download_url
 from clovers.utils.linecard import linecard_to_png, FontManager
 from clovers.core.plugin import Plugin, Result
@@ -17,11 +16,6 @@ config_key = __package__
 config_data = Config.model_validate(clovers_config.get(config_key, {}))
 """主配置类"""
 clovers_config[config_key] = config_data.model_dump()
-
-fontname = config_data.fontname
-fallback = config_data.fallback_fonts
-
-font_manager = FontManager(fontname, fallback, (30, 40, 60))
 
 
 def build_result(result):
@@ -42,7 +36,7 @@ def build_result(result):
 
 
 waifu_path = Path(config_data.waifu_path)
-waifu_data_file = waifu_path / "waifu_data"
+waifu_data_file = waifu_path / "waifu_data.json"
 waifu_data = DataBase.load(waifu_data_file)
 
 record = waifu_data.record
@@ -109,12 +103,29 @@ async def _(event: Event):
     return "\n".join(user.nickname for user in await event.group_member_list() if user.user_id in waifu_data.protect_uids)
 
 
+waifu_last_sent_time_filter = config_data.waifu_last_sent_time_filter
+
+fontname = config_data.fontname
+fallback = config_data.fallback_fonts
+
+font_manager = FontManager(fontname, fallback, (30, 40, 60))
+
+
+def text_to_png(text: str):
+    return linecard_to_png(text, font_manager, font_size=40, bg_color="white")
+
+
+def waifu_result(user_id: str | int, tips: str, avatar: bytes | None):
+
+    waifu_data.save(waifu_data_file)
+    return [Result("at", user_id), tips, BytesIO(avatar) if avatar else "None"]
+
+
 happy_end_tips = config_data.happy_end_tips
 bad_end_tips = config_data.bad_end_tips
 waifu_he = config_data.waifu_he
 waifu_be = waifu_he + config_data.waifu_be
 waifu_ntr = config_data.waifu_ntr
-waifu_last_sent_time_filter = config_data.waifu_last_sent_time_filter
 
 
 def waifu_list(exclusion: set[str]):
@@ -140,11 +151,6 @@ async def _(event: Event):
     record_couple = group_record.record_couple
     record_lock = group_record.record_lock
 
-    def end(user_id: str | int, tips: str, avatar: bytes | None):
-
-        waifu_data.save(waifu_data_file)
-        return [Result("at", user_id), tips, BytesIO(avatar) if avatar else "None"]
-
     if event.at:
         waifu_id = event.at[0]
         couple_id = record_couple.get(user_id)
@@ -163,17 +169,17 @@ async def _(event: Event):
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
                 waifu_data.save(waifu_data_file)
-                return end(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+                return waifu_result(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
             else:
                 tips = "你已经有CP了，不许花心哦~"
             avatar = await download_url(waifu.avatar)
-            return end(user_id, f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
+            return waifu_result(user_id, f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
         elif waifu_id in waifu_data.protect_uids:
             return
         elif waifus_waifu_id := record_couple.get(waifu_id):
             waifus_waifu = user_data[waifus_waifu_id]
             avatar = await download_url(waifus_waifu.avatar)
-            return end(user_id, f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
+            return waifu_result(user_id, f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
         else:
             randvalue = random.randint(1, 100)
             if randvalue <= waifu_he:
@@ -183,11 +189,11 @@ async def _(event: Event):
                 record_lock[user_id] = waifu_id
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
-                return end(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+                return waifu_result(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
             elif randvalue <= waifu_be:
                 record_couple[user_id] = user_id
             avatar = await download_url(event.avatar)
-            return end(user_id, f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。", avatar)
+            return waifu_result(user_id, f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。", avatar)
     else:
         waifu_id = record_couple.get(user_id)
         if not waifu_id:
@@ -199,7 +205,7 @@ async def _(event: Event):
         record_couple[user_id] = waifu_id
         record_couple[waifu_id] = user_id
         avatar = await download_url(waifu.avatar)
-        return end(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+        return waifu_result(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
 
 
 @plugin.handle({"查看娶群友卡池"}, {"group_id"})
@@ -212,7 +218,7 @@ async def _(event: Event):
     if not namelist:
         return "群友已经被娶光了。下次早点来吧。"
     output += namelist
-    return linecard_to_png("\n".join(output), font_manager)
+    return text_to_png("\n".join(output))
 
 
 @plugin.handle({"本群CP", "本群cp"}, {"group_id"})
@@ -230,7 +236,7 @@ async def _(event: Event):
             seen.add(v)
     output = ["本群CP：\n----"]
     output += [f"[color][red]♥ [nowrap]\n{k}|{v}" for k, v in name_pairs.items()]
-    return linecard_to_png("\n".join(output), font_manager)
+    return text_to_png("\n".join(output))
 
 
 __plugin__ = plugin

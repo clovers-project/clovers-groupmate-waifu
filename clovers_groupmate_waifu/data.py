@@ -27,7 +27,7 @@ class User(BaseModel):
     group_nickname_dict: dict[str, str] = {}
 
     def group_nickname(self, group_id: str):
-        return self.group_nickname_dict.get(group_id, self.nickname)
+        return self.group_nickname_dict.get(group_id) or self.nickname
 
 
 class DataBase(BaseModel):
