@@ -121,6 +121,7 @@ bad_end_tips = config_data.bad_end_tips
 waifu_he = config_data.waifu_he
 waifu_be = waifu_he + config_data.waifu_be
 waifu_ntr = config_data.waifu_ntr
+waifu_ntr_be = waifu_ntr + config_data.waifu_be
 
 
 def waifu_list(exclusion: set[str] = set()):
@@ -156,7 +157,8 @@ async def _(event: Event):
                 record_lock[user_id] = couple_id
                 waifu_data.save(waifu_data_file)
             elif user_id not in record_lock and random.randint(1, 100) <= waifu_he:
-                del record_lock[couple_id]
+                if couple_id in record_lock:
+                    del record_lock[couple_id]
                 del record_couple[couple_id]
                 waifu_data.update_nickname(await event.group_member_list(), group_id)
                 waifu = user_data[waifu_id]
@@ -174,16 +176,25 @@ async def _(event: Event):
         elif waifus_waifu_id := record_couple.get(waifu_id):
             waifu = user_data[waifus_waifu_id]
             tips = f"ta已经名花有主了~\nta的CP：{waifu.group_nickname(group_id)}"
-
-            if locked_check(record_lock, waifus_waifu_id, waifu_id) and random.randint(1, 100) <= waifu_ntr:
-                waifu = user_data[waifu_id]
-                tips += f"\n但是...\n恭喜你抢到了群友{waifu.group_nickname(group_id)}"
-                del record_couple[waifus_waifu_id]
-                record_lock[user_id] = waifu_id
-                record_couple[user_id] = waifu_id
-                record_couple[waifu_id] = user_id
-                waifu_data.save(waifu_data_file)
-
+            if not locked_check(record_lock, waifus_waifu_id, waifu_id):
+                randvalue = random.randint(1, 100)
+                if randvalue <= waifu_ntr:
+                    waifu = user_data[waifu_id]
+                    tips += f"\n但是...\n恭喜你抢到了群友{waifu.group_nickname(group_id)}"
+                    if waifus_waifu_id in record_lock:
+                        del record_lock[waifus_waifu_id]
+                    del record_couple[waifus_waifu_id]
+                    record_lock[user_id] = waifu_id
+                    record_couple[user_id] = waifu_id
+                    record_couple[waifu_id] = user_id
+                    waifu_data.save(waifu_data_file)
+                elif randvalue <= waifu_ntr_be:
+                    record_couple[user_id] = user_id
+                    if user_id in user_data:
+                        waifu = user_data[user_id]
+                    else:
+                        waifu = user_data[user_id] = User(user_id=user_id, nickname=event.nickname, card="", avatar=event.avatar)
+                    tips += "不过好消息是...\n你娶到了你自己！"
         else:
             randvalue = random.randint(1, 100)
             waifu_data.update_nickname(await event.group_member_list(), group_id)
