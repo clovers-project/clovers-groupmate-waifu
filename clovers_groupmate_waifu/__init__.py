@@ -3,7 +3,7 @@ import time
 from clovers_apscheduler import scheduler
 from pathlib import Path
 from io import BytesIO
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from clovers.utils.tools import download_url
 from clovers.utils.linecard import linecard_to_png, FontManager
 from clovers.core.plugin import Plugin, Result
@@ -108,15 +108,20 @@ fallback = config_data.fallback_fonts
 
 font_manager = FontManager(fontname, fallback, (30, 40, 60))
 
+text_to_png: Callable[[str], BytesIO]
+text_to_png = lambda text: linecard_to_png(text, font_manager, font_size=40, bg_color="white")
+waifu_result: Callable[[str | int, str, bytes | None], list]
+waifu_result = lambda user_id, tips, avatar: [Result("at", user_id), tips, BytesIO(avatar) if avatar else "None"]
 
-def text_to_png(text: str):
-    return linecard_to_png(text, font_manager, font_size=40, bg_color="white")
 
-
-def waifu_result(user_id: str | int, tips: str, avatar: bytes | None):
-
-    waifu_data.save(waifu_data_file)
-    return [Result("at", user_id), tips, BytesIO(avatar) if avatar else "None"]
+def locked_check(lock_data: dict[str, str], uid0: str, uid1: str):
+    uid0_locked = lock_data.get(uid0)
+    if uid0_locked != uid1:
+        return False
+    uid1_locked = lock_data.get(uid1)
+    if uid1_locked != uid1:
+        return False
+    return True
 
 
 happy_end_tips = config_data.happy_end_tips
@@ -155,8 +160,9 @@ async def _(event: Event):
         if couple_id := record_couple.get(user_id):
             waifu = user_data[couple_id]
             if couple_id == waifu_id:
-                tips = random.choice(happy_end_tips)
+                tips = random.choice(happy_end_tips) + "\n你的CP："
                 record_lock[user_id] = couple_id
+                waifu_data.save(waifu_data_file)
             elif user_id not in record_lock and random.randint(1, 100) <= waifu_he:
                 del record_lock[couple_id]
                 del record_couple[couple_id]
@@ -167,31 +173,43 @@ async def _(event: Event):
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
                 waifu_data.save(waifu_data_file)
-                return waifu_result(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+                tips = "恭喜你娶到了群友！"
             else:
-                tips = "你已经有CP了，不许花心哦~"
-            avatar = await download_url(waifu.avatar)
-            return waifu_result(user_id, f"{tips}\n你的CP：{waifu.group_nickname(group_id)}", avatar)
+                tips = "你已经有CP了，不许花心哦~\n你的CP："
+            tips += waifu.group_nickname(group_id)
         elif waifu_id in waifu_data.protect_uids:
             return
         elif waifus_waifu_id := record_couple.get(waifu_id):
-            waifus_waifu = user_data[waifus_waifu_id]
-            avatar = await download_url(waifus_waifu.avatar)
-            return waifu_result(user_id, f"ta已经名花有主了~\nta的CP：{waifus_waifu.group_nickname(group_id)}", avatar)
+            waifu = user_data[waifus_waifu_id]
+            tips = f"ta已经名花有主了~\nta的CP：{waifu.group_nickname(group_id)}"
+
+            if locked_check(record_lock, waifus_waifu_id, waifu_id) and random.randint(1, 100) <= waifu_ntr:
+                waifu = user_data[waifu_id]
+                tips += f"\n但是...\n恭喜你抢到了群友{waifu.group_nickname(group_id)}"
+                del record_couple[waifus_waifu_id]
+                record_lock[user_id] = waifu_id
+                record_couple[user_id] = waifu_id
+                record_couple[waifu_id] = user_id
+                waifu_data.save(waifu_data_file)
+
         else:
             randvalue = random.randint(1, 100)
+            waifu_data.update_nickname(await event.group_member_list(), group_id)
             if randvalue <= waifu_he:
-                waifu_data.update_nickname(await event.group_member_list(), group_id)
                 waifu = user_data[waifu_id]
                 avatar = await download_url(waifu.avatar)
                 record_lock[user_id] = waifu_id
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
-                return waifu_result(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+                waifu_data.save(waifu_data_file)
+                tips = f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}"
             elif randvalue <= waifu_be:
                 record_couple[user_id] = user_id
-            avatar = await download_url(event.avatar)
-            return waifu_result(user_id, f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。", avatar)
+                waifu = user_data[user_id]
+                waifu_data.save(waifu_data_file)
+                tips = f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。"
+            else:
+                return [Result("at", user_id), f"{random.choice(bad_end_tips)}\n你没有娶到群友。"]
     else:
         waifu_id = record_couple.get(user_id)
         if not waifu_id:
@@ -202,8 +220,55 @@ async def _(event: Event):
             waifu = user_data[waifu_id]
         record_couple[user_id] = waifu_id
         record_couple[waifu_id] = user_id
-        avatar = await download_url(waifu.avatar)
-        return waifu_result(user_id, f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}", avatar)
+        waifu_data.save(waifu_data_file)
+        tips = f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}"
+    avatar = await download_url(waifu.avatar)
+    return waifu_result(user_id, tips, avatar)
+
+
+@plugin.handle({"离婚", "分手"}, {"group_id", "user_id", "to_me"})
+async def _(event: Event):
+    if not event.to_me:
+        return
+    group_id = event.group_id
+    user_id = event.user_id
+    group_record = record.setdefault(group_id, GroupData())
+    record_couple = group_record.record_couple
+    record_lock = group_record.record_lock
+    waifu_id = record_couple.get(user_id)
+    if not waifu_id or waifu_id == user_id:
+        return [Result("at", user_id), "你还没有CP哦"]
+    result = [Result("at", user_id), "你们已经是单身了。"]
+
+    if locked_check(record_lock, user_id, waifu_id):
+
+        @plugin.temp_handle(f"分手 {group_id} {user_id}", extra_args={"group_id", "user_id"})
+        async def _(event: Event, finish):
+            if event.group_id != group_id or event.user_id != user_id:
+                return
+            match event.event.raw_command:
+                case "确认":
+                    del record_lock[user_id]
+                    del record_lock[waifu_id]
+                    del record_couple[user_id]
+                    del record_couple[waifu_id]
+                    waifu_data.save(waifu_data_file)
+                    finish()
+                    return result
+                case "取消":
+                    finish()
+                    return [Result("at", user_id), "祝你们百年好合"]
+
+        return [Result("at", user_id), "你们已经互相锁定了，请问真的要分手吗？【确认 or 取消】"]
+
+    if user_id in record_lock:
+        del record_lock[user_id]
+    if waifu_id in record_lock:
+        del record_lock[waifu_id]
+    del record_couple[user_id]
+    del record_couple[waifu_id]
+    waifu_data.save(waifu_data_file)
+    return result
 
 
 @plugin.handle({"查看娶群友卡池"}, {"group_id"})
@@ -268,6 +333,7 @@ async def _(event: Event):
         group_record.record_yinpa0[yinpa_id] -= 1
     else:
         tips = "恭喜你涩到了群友！"
+    waifu_data.save(waifu_data_file)
     avatar = await download_url(yinpa.avatar)
     return waifu_result(user_id, f"{tips}\n伱的涩涩对象是、{yinpa.group_nickname(group_id)}", avatar)
 
@@ -277,10 +343,10 @@ async def _(event: Event):
     group_id = event.group_id
     group_record = record.setdefault(group_id, GroupData())
     output = []
-    single_result = lambda uid, times: f"[color][red]♥[nowrap]\n {user_data[uid].group_nickname(group_id)}[nowrap]\n[right]{times} 次"
-    record1 = ["透群友记录\n----\n"] + [single_result(*args) for args in group_record.record_yinpa1.items()]
+    single_result = lambda uid, times: f"[color][red]♥[nowrap]\n {user_data[uid].group_nickname(group_id)}  [nowrap]\n[right]{times} 次"
+    record1 = ["透群友记录\n----\n"] + [single_result(k, v) for k, v in group_record.record_yinpa1.items() if v > 1]
     output.append(text_to_png("\n".join(record1)))
-    record0 = ["群友被透记录\n----\n"] + [single_result(*args) for args in group_record.record_yinpa0.items()]
+    record0 = ["群友被透记录\n----\n"] + [single_result(k, v) for k, v in group_record.record_yinpa0.items() if v > 1]
     output.append(text_to_png("\n".join(record0)))
     return output
 

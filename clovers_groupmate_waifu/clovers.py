@@ -35,7 +35,6 @@ class Event:
         return self.event.kwargs["avatar"]
 
     async def group_member_list(self) -> list[User]:
-        func = self.event.kwargs.get("group_member_list")
-        if func and (user_list := await func()):
-            return [User.model_validate(user) for user in user_list]
-        return []
+        func = self.event.kwargs["group_member_list"]
+        user_list = await func()
+        return [User.model_validate(user) for user in user_list]
