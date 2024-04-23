@@ -239,4 +239,14 @@ async def _(event: Event):
     return text_to_png("\n".join(output))
 
 
+@plugin.handle({"透群友"}, {"group_id", "user_id", "at", "group_member_list"})
+async def _(event: Event):
+    pass
+
+
+@plugin.handle({"透群友记录", "色色记录", "涩涩记录"}, {"group_id", "user_id", "at", "group_member_list"})
+async def _(event: Event):
+    pass
+
+
 __plugin__ = plugin
