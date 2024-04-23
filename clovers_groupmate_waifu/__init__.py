@@ -53,8 +53,6 @@ else:
 
     def reset_data():
         for group_data in record.values():
-            group_data.record_yinpa0.clear()
-            group_data.record_yinpa1.clear()
             group_data.record_couple = {k: v for k, v in group_data.record_couple.items() if k != v}
 
 
@@ -128,7 +126,7 @@ waifu_be = waifu_he + config_data.waifu_be
 waifu_ntr = config_data.waifu_ntr
 
 
-def waifu_list(exclusion: set[str]):
+def waifu_list(exclusion: set[str] = set()):
     last_time = time.time() - waifu_last_sent_time_filter
     exclusion = exclusion | protect_uids
 
@@ -235,18 +233,56 @@ async def _(event: Event):
             seen.add(k)
             seen.add(v)
     output = ["本群CP：\n----"]
-    output += [f"[color][red]♥ [nowrap]\n{k}|{v}" for k, v in name_pairs.items()]
+    output += [f"[color][red]♥[nowrap]\n {k} | {v}" for k, v in name_pairs.items()]
     return text_to_png("\n".join(output))
+
+
+yinpa_he = config_data.yinpa_he
+yinpa_cp = config_data.yinpa_cp
 
 
 @plugin.handle({"透群友"}, {"group_id", "user_id", "at", "group_member_list"})
 async def _(event: Event):
-    pass
+    group_id = event.group_id
+    user_id = event.user_id
+    group_record = record.setdefault(group_id, GroupData())
+    group_record.record_yinpa1[user_id] += 1
+    record_couple = group_record.record_couple
+    waifu_id = record_couple.get(user_id)
+    if event.at:
+        yinpa_id = event.at[0]
+        randvalue = yinpa_cp if yinpa_id == waifu_id else yinpa_he
+        if random.randint(1, 100) >= randvalue:
+            return [Result("at", user_id), "不可以涩涩"]
+        yinpa = user_data[yinpa_id]
+    else:
+        waifu_data.update_nickname(await event.group_member_list(), group_id)
+        yinpa = random.choice(waifu_list())
+        yinpa_id = yinpa.user_id
+    group_record.record_yinpa0[yinpa_id] += 1
+
+    if yinpa_id == waifu_id:
+        tips = "恭喜你涩到了你的老婆！"
+    elif yinpa_id == user_id:
+        tips = "恭喜你涩到了你自己！"
+        group_record.record_yinpa0[yinpa_id] -= 1
+    else:
+        tips = "恭喜你涩到了群友！"
+    avatar = await download_url(yinpa.avatar)
+    return waifu_result(user_id, f"{tips}\n伱的涩涩对象是、{yinpa.group_nickname(group_id)}", avatar)
 
 
-@plugin.handle({"透群友记录", "色色记录", "涩涩记录"}, {"group_id", "user_id", "at", "group_member_list"})
+@plugin.handle({"透群友记录", "色色记录", "涩涩记录"}, {"group_id"})
 async def _(event: Event):
-    pass
+    group_id = event.group_id
+    group_record = record.setdefault(group_id, GroupData())
+    output = []
+    single_result = lambda uid, times: f"[color][red]♥[nowrap]\n {user_data[uid].group_nickname(group_id)}[nowrap]\n[right]{times} 次"
+    record1 = ["透群友记录\n----\n"] + [single_result(*args) for args in group_record.record_yinpa1.items()]
+    output.append(text_to_png("\n".join(record1)))
+    record0 = ["群友被透记录\n----\n"] + [single_result(*args) for args in group_record.record_yinpa0.items()]
+    output.append(text_to_png("\n".join(record0)))
+    return output
 
 
 __plugin__ = plugin
