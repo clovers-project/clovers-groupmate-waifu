@@ -190,6 +190,7 @@ async def _(event: Event):
                     waifu_data.save(waifu_data_file)
                 elif randvalue <= waifu_ntr_be:
                     record_couple[user_id] = user_id
+                    waifu_data.save(waifu_data_file)
                     if user_id in user_data:
                         waifu = user_data[user_id]
                     else:
