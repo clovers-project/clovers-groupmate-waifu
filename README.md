@@ -5,15 +5,9 @@
 _✨ 娶群友 ✨_
 
 <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="python">
-<a href="./LICENSE">
-<img src="https://img.shields.io/github/license/KarisAya/clovers_groupmate_waifu.svg" alt="license">
-</a>
-<a href="https://pypi.python.org/pypi/clovers-groupmate-waifu">
-<img src="https://img.shields.io/pypi/v/clovers-groupmate-waifu.svg" alt="pypi">
-</a>
-<a href="https://pypi.python.org/pypi/clovers-groupmate-waifu">
-<img src="https://img.shields.io/pypi/dm/clovers-groupmate-waifu" alt="pypi download">
-</a>
+<a href="./LICENSE"><img src="https://img.shields.io/github/license/KarisAya/clovers_groupmate_waifu.svg" alt="license"></a>
+<a href="https://pypi.python.org/pypi/clovers_groupmate_waifu"><img src="https://img.shields.io/pypi/v/clovers_groupmate_waifu.svg" alt="pypi"></a>
+<a href="https://pypi.python.org/pypi/clovers_groupmate_waifu"><img src="https://img.shields.io/pypi/dm/clovers_groupmate_waifu" alt="pypi download"></a>
 
 </div>
 
