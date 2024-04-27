@@ -26,8 +26,6 @@ class Config(BaseModel):
     """文件记录存档路径"""
     waifu_reset: bool = True
     """是否每日重置cp记录"""
-    waifu_cd_bye: int = 3600
-    """分手冷却"""
     waifu_he: int = 40
     """指定成功概率"""
     waifu_be: int = 20

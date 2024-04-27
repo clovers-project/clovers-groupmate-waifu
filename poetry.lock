@@ -72,13 +72,13 @@ files = [
 
 [[package]]
 name = "clovers"
-version = "0.1.4"
+version = "0.1.8"
 description = ""
 optional = false
-python-versions = "<4.0,>=3.10"
+python-versions = "<4.0,>=3.12"
 files = [
-    {file = "clovers-0.1.4-py3-none-any.whl", hash = "sha256:42ae16c07a43e7ef57a3d7ee3ae56ca59c8bb3cd9b3a8a1da2c8d85e082ad91a"},
-    {file = "clovers-0.1.4.tar.gz", hash = "sha256:cd55aa373e7638db249a8c802e85996f6f8c0c6f0d3847dc86977e3097dcc4a8"},
+    {file = "clovers-0.1.8-py3-none-any.whl", hash = "sha256:f79fc0c55901f42e650aa0f14a4379bdd6ddd27349bf2f39e2f1ce96370e5808"},
+    {file = "clovers-0.1.8.tar.gz", hash = "sha256:f371bb26071b08de0e137ea8867399f5f900ac97a333c46a2b4ae67ca7510adc"},
 ]
 
 [package.dependencies]
@@ -846,4 +846,4 @@ devenv = ["check-manifest", "pytest (>=4.3)", "pytest-cov", "pytest-mock (>=3.3)
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "060f16d1888dc4357f0d410fea8e791308f57eb132b0472157fb84adaef317ed"
+content-hash = "165b844f9d05de6bc012f395e4833ca533df58c56d7eae94d281c4639716bfe4"
