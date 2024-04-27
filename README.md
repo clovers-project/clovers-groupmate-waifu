@@ -89,7 +89,7 @@ yinpa_cp = 50
 
 </details>
 
-## 功能介绍
+## 🎉 功能介绍
 
 ### 锁定机制
 
@@ -131,11 +131,15 @@ ntr ~~宫吧老哥狂喜版~~，每次抽到的结果都不一样。
 
 重置娶群友记录
 
-`设置娶群友保护`, **管理员指令**：`设置娶群友保护@someone@someother`
+`设置娶群友保护`,
+
+**管理员指令**：`设置娶群友保护@someone@someother`
 
 将自己或 at 的人（可以 at 多人）加入保护名单。名单内的群友无法触发娶群友或透群友，也无法作为娶群友或透群友的目标。
 
-`解除娶群友保护`, **管理员指令**：`解除娶群友保护@someone@someother`
+`解除娶群友保护`,
+
+**管理员指令**：`解除娶群友保护@someone@someother`
 
 将自己或 at 的人（可以 at 多人）从保护名单删除
 
@@ -143,8 +147,12 @@ ntr ~~宫吧老哥狂喜版~~，每次抽到的结果都不一样。
 
 查看娶群友保护的保护名单
 
-## 其他
+## 📞 联系
 
-如有建议，bug 反馈，以及讨论新玩法，新机制（或者单纯没有明白怎么用）可以来加群哦~
+如有建议，bug 反馈等可以加群
 
-![群号](https://raw.githubusercontent.com/KarisAya/nonebot_plugin_game_collection/master/%E9%99%84%E4%BB%B6/qrcode_1676538742221.jpg)
+机器人 bug 研究中心（闲聊群） 744751179
+
+永恒之城（测试群） 724024810
+
+![群号](https://github.com/KarisAya/clovers/blob/master/%E9%99%84%E4%BB%B6/qrcode_1676538742221.jpg)
