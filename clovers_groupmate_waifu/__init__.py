@@ -124,7 +124,10 @@ waifu_ntr = config_data.waifu_ntr
 waifu_ntr_be = waifu_ntr + config_data.waifu_be
 
 
-def waifu_list(exclusion: set[str] = set()):
+def waifu_list(group_id: str, exclusion: set[str] = set()):
+    namelist = waifu_data.group_namelist.get(group_id)
+    if not namelist:
+        return []
     last_time = time.time() - waifu_last_sent_time_filter
     exclusion = exclusion | protect_uids
 
@@ -136,7 +139,7 @@ def waifu_list(exclusion: set[str] = set()):
             return False
         return True
 
-    return [user for user in user_data.values() if condition(user)]
+    return [user_data[user_id] for user_id in namelist if condition(user_data[user_id])]
 
 
 @plugin.handle({"娶群友"}, {"group_id", "user_id", "nickname", "avatar", "at"}, {"group_member_list"})
@@ -146,11 +149,12 @@ async def _(event: Event):
     group_record = record.setdefault(group_id, GroupData())
     record_couple = group_record.record_couple
     record_lock = group_record.record_lock
-
+    couple_id = record_couple.get(user_id)
+    if couple_id == user_id:
+        return [Result("at", user_id), f"{random.choice(bad_end_tips)}\n你没有娶到群友。"]
     if event.at:
         waifu_id = event.at[0]
-        couple_id = record_couple.get(user_id)
-        if couple_id := record_couple.get(user_id):
+        if couple_id:
             waifu = user_data[couple_id]
             if couple_id == waifu_id:
                 tips = random.choice(happy_end_tips) + "\n你的CP："
@@ -215,16 +219,15 @@ async def _(event: Event):
             else:
                 return [Result("at", user_id), f"{random.choice(bad_end_tips)}\n你没有娶到群友。"]
     else:
-        waifu_id = record_couple.get(user_id)
-        if not waifu_id:
+        if not couple_id:
             waifu_data.update_nickname(await event.group_member_list(), group_id)
-            waifu = random.choice(waifu_list(set(record_couple.keys())))
+            waifu = random.choice(waifu_list(group_id, set(record_couple.keys())))
             waifu_id = waifu.user_id
             record_couple[user_id] = waifu_id
             record_couple[waifu_id] = user_id
             waifu_data.save(waifu_data_file)
         else:
-            waifu = user_data[waifu_id]
+            waifu = user_data[couple_id]
         tips = f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}"
     avatar = await download_url(waifu.avatar)
     return waifu_result(user_id, tips, avatar)
@@ -281,7 +284,7 @@ async def _(event: Event):
     record_couple = record.setdefault(group_id, GroupData()).record_couple
     waifu_data.update_nickname(await event.group_member_list(), group_id)
     output = ["卡池（前80位）：\n----"]
-    namelist = [waifu.group_nickname(group_id) for waifu in waifu_list(set(record_couple.keys()))[:80]]
+    namelist = [waifu.group_nickname(group_id) for waifu in waifu_list(group_id, set(record_couple.keys()))[:80]]
     if not namelist:
         return "群友已经被娶光了。下次早点来吧。"
     output += namelist
@@ -326,7 +329,7 @@ async def _(event: Event):
         yinpa = user_data[yinpa_id]
     else:
         waifu_data.update_nickname(await event.group_member_list(), group_id)
-        yinpa = random.choice(waifu_list())
+        yinpa = random.choice(waifu_list(group_id))
         yinpa_id = yinpa.user_id
     group_record.record_yinpa0[yinpa_id] += 1
 

@@ -35,9 +35,12 @@ class DataBase(BaseModel):
     protect_uids: set[str] = set()
     "保护名单"
     user_data: dict[str, User] = {}
+    group_namelist: dict[str, set[str]] = {}
 
     def update_nickname(self, user_list: list[User], group_id: str):
+        self.group_namelist[group_id] = set()
         for user in user_list:
+            self.group_namelist[group_id].add(user.user_id)
             if user.user_id in self.user_data and user.card:
                 self.user_data[user.user_id].group_nickname_dict[group_id] = user.card
             else:
