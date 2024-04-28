@@ -21,7 +21,7 @@ class GroupData(BaseModel):
 class User(BaseModel):
     user_id: str
     nickname: str
-    card: str
+    card: str | None
     avatar: str
     last_sent_time: int = 0
     group_nickname_dict: dict[str, str] = {}
@@ -38,10 +38,11 @@ class DataBase(BaseModel):
 
     def update_nickname(self, user_list: list[User], group_id: str):
         for user in user_list:
-            if user.user_id in self.user_data:
+            if user.user_id in self.user_data and user.card:
                 self.user_data[user.user_id].group_nickname_dict[group_id] = user.card
             else:
-                user.group_nickname_dict[group_id] = user.card
+                if user.card:
+                    user.group_nickname_dict[group_id] = user.card
                 self.user_data[user.user_id] = user
 
     @classmethod
