@@ -67,18 +67,16 @@ async def _(event: Event):
     return "娶群友记录已重置"
 
 
-@plugin.handle({"设置娶群友保护"}, {"permission", "nickname", "user_id", "at"}, {"group_member_list"})
+@plugin.handle({"设置娶群友保护"}, {"permission", "user_id", "at"})
 async def _(event: Event):
     if not event.at:
         protect_uids.add(event.user_id)
-        namelist = event.nickname
     elif event.permission != 3:
         return "保护失败。你无法为其他人设置保护。"
     else:
         waifu_data.protect_uids = protect_uids | set(event.at)
-        namelist = "\n".join(user.nickname for user in await event.group_member_list())
     waifu_data.save(waifu_data_file)
-    return f"保护成功！\n保护名单为：\n{namelist}"
+    return "保护成功！"
 
 
 @plugin.handle({"解除娶群友保护"}, {"permission", "nickname", "user_id", "at"})
@@ -154,13 +152,13 @@ async def _(event: Event):
         return [Result("at", user_id), f"{random.choice(bad_end_tips)}\n你没有娶到群友。"]
     if event.at:
         waifu_id = event.at[0]
-        if couple_id:
+        if couple_id:  # 判断自己是否有 CP
             waifu = user_data[couple_id]
-            if couple_id == waifu_id:
+            if couple_id == waifu_id:  # 如果 at 到自己的 CP
                 tips = random.choice(happy_end_tips) + "\n你的CP："
                 record_lock[user_id] = couple_id
                 waifu_data.save(waifu_data_file)
-            elif user_id not in record_lock and random.randint(1, 100) <= waifu_he:
+            elif user_id not in record_lock and random.randint(1, 100) <= waifu_he:  # 如果自己未主动锁定对方
                 if couple_id in record_lock:
                     del record_lock[couple_id]
                 del record_couple[couple_id]
@@ -175,31 +173,38 @@ async def _(event: Event):
             else:
                 tips = "你已经有CP了，不许花心哦~\n你的CP："
             tips += waifu.group_nickname(group_id)
-        elif waifu_id in waifu_data.protect_uids:
+        elif waifu_id in waifu_data.protect_uids:  # 如果对方在保护列表
             return
-        elif waifus_waifu_id := record_couple.get(waifu_id):
-            waifu = user_data[waifus_waifu_id]
-            tips = f"ta已经名花有主了~\nta的CP：{waifu.group_nickname(group_id)}"
-            if not locked_check(record_lock, waifus_waifu_id, waifu_id):
-                randvalue = random.randint(1, 100)
-                if randvalue <= waifu_ntr:
-                    waifu = user_data[waifu_id]
-                    tips += f"\n但是...\n恭喜你抢到了群友{waifu.group_nickname(group_id)}"
-                    if waifus_waifu_id in record_lock:
-                        del record_lock[waifus_waifu_id]
-                    del record_couple[waifus_waifu_id]
-                    record_lock[user_id] = waifu_id
-                    record_couple[user_id] = waifu_id
-                    record_couple[waifu_id] = user_id
-                    waifu_data.save(waifu_data_file)
-                elif randvalue <= waifu_ntr_be:
-                    record_couple[user_id] = user_id
-                    waifu_data.save(waifu_data_file)
-                    if user_id in user_data:
-                        waifu = user_data[user_id]
-                    else:
-                        waifu = user_data[user_id] = User(user_id=user_id, nickname=event.nickname, card="", avatar=event.avatar)
-                    tips += "不过好消息是...\n你娶到了你自己！"
+        elif waifus_waifu_id := record_couple.get(waifu_id):  # 如果对方有 CP 记录
+            if waifus_waifu_id == waifu_id:  # 判断是否对方被锁定单身
+                record_lock[user_id] = waifu_id
+                record_couple[user_id] = waifu_id
+                record_couple[waifu_id] = user_id
+                waifu_data.save(waifu_data_file)
+                tips = "恭喜你娶到了群友！"
+            else:
+                tips = f"ta已经名花有主了~\nta的CP：{waifu.group_nickname(group_id)}"
+                waifu = user_data[waifus_waifu_id]
+                if not locked_check(record_lock, waifus_waifu_id, waifu_id):  # 判断对方 CP 是否无锁定
+                    randvalue = random.randint(1, 100)  # ntr及 BE 检定
+                    if randvalue <= waifu_ntr:
+                        waifu = user_data[waifu_id]
+                        tips += f"\n但是...\n恭喜你抢到了群友{waifu.group_nickname(group_id)}"
+                        if waifus_waifu_id in record_lock:
+                            del record_lock[waifus_waifu_id]
+                        del record_couple[waifus_waifu_id]
+                        record_lock[user_id] = waifu_id
+                        record_couple[user_id] = waifu_id
+                        record_couple[waifu_id] = user_id
+                        waifu_data.save(waifu_data_file)
+                    elif randvalue <= waifu_ntr_be:
+                        record_couple[user_id] = user_id
+                        waifu_data.save(waifu_data_file)
+                        if user_id in user_data:
+                            waifu = user_data[user_id]
+                        else:
+                            waifu = user_data[user_id] = User(user_id=user_id, nickname=event.nickname, card="", avatar=event.avatar)
+                        tips += "不过好消息是...\n你娶到了你自己！"
         else:
             randvalue = random.randint(1, 100)
             waifu_data.update_nickname(await event.group_member_list(), group_id)
@@ -211,7 +216,7 @@ async def _(event: Event):
                 record_couple[waifu_id] = user_id
                 waifu_data.save(waifu_data_file)
                 tips = f"恭喜你娶到了群友：{waifu.group_nickname(group_id)}"
-            elif randvalue <= waifu_be:
+            elif randvalue <= waifu_be:  # 锁定单身
                 record_couple[user_id] = user_id
                 waifu = user_data[user_id]
                 waifu_data.save(waifu_data_file)
