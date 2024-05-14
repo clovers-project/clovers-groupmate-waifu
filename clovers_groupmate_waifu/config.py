@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from pathlib import Path
 
 
 class Config(BaseModel):
@@ -22,7 +21,7 @@ class Config(BaseModel):
         "Noto Color Emoji",
     ]
 
-    waifu_path: str = str(Path("./data/waifu/").absolute())
+    waifu_path: str = "./data/waifu/"
     """文件记录存档路径"""
     waifu_reset: bool = True
     """是否每日重置cp记录"""
