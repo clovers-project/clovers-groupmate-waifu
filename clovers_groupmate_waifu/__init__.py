@@ -183,8 +183,8 @@ async def _(event: Event):
                 waifu_data.save(waifu_data_file)
                 tips = "恭喜你娶到了群友！"
             else:
-                tips = f"ta已经名花有主了~\nta的CP：{waifu.group_nickname(group_id)}"
                 waifu = user_data[waifus_waifu_id]
+                tips = f"ta已经名花有主了~\nta的CP：{waifu.group_nickname(group_id)}"
                 if not locked_check(record_lock, waifus_waifu_id, waifu_id):  # 判断对方 CP 是否无锁定
                     randvalue = random.randint(1, 100)  # ntr及 BE 检定
                     if randvalue <= waifu_ntr:
