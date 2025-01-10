@@ -99,7 +99,7 @@ class DataBase(BaseModel):
         if file.exists():
             with open(file, "r", encoding="utf8") as f:
                 data = cls.model_validate_json(f.read())
-                data.file
+                data.file = file
         else:
             file.parent.mkdir(parents=True, exist_ok=True)
             data = cls(file=file)
