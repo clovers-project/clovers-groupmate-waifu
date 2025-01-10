@@ -70,7 +70,7 @@ plugin = Plugin(build_event=lambda event: Event(event), build_result=build_resul
 
 
 def at_text_image_result(at: str, text: str, image: bytes | None):
-    return Result("list", [Result("at", at), text, BytesIO(image) if image else "None"])
+    return Result("list", [Result("at", at), Result("text", text), Result("image", image) if image else Result("text", "None")])
 
 
 def at_result(user_id: str, result):

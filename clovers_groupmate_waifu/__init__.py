@@ -119,7 +119,7 @@ async def _(event: Event):
         if couple_id:  # 判断自己是否有 CP
             if couple_id == waifu_id:  # 如果 at 到自己的 CP：HE
                 record_lock[user_id] = couple_id
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 waifu = user_data[couple_id]
                 waifu_info = await event.group_member_info(group_id, waifu_id)
                 waifu.update(waifu_info)
@@ -143,7 +143,7 @@ async def _(event: Event):
                     waifu.update(waifu_info)
                 else:
                     waifu = user_data[waifu_id] = User.from_info(waifu_info)
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 return at_text_image_result(
                     user_id,
                     f"恭喜你娶到了群友！\n【{waifu_info.name}】",
@@ -166,7 +166,7 @@ async def _(event: Event):
                 waifu = user_data[waifu_id]
                 waifu_info = await event.group_member_info(group_id, waifu_id)
                 waifu.update(waifu_info)
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 return at_text_image_result(
                     user_id,
                     f"恭喜你娶到了群友！\n【{waifu_info.name}】",
@@ -190,11 +190,11 @@ async def _(event: Event):
                 record_lock[user_id] = waifu_id
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 return at_text_image_result(user_id, tips, await download_url(waifu.avatar))
             else:  # ntr BE
                 record_couple[user_id] = user_id
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 if user_id in user_data:
                     waifu = user_data[user_id]
                     waifu.group_nickname_dict[group_id] = event.nickname
@@ -220,7 +220,7 @@ async def _(event: Event):
                 record_lock[user_id] = waifu_id
                 record_couple[user_id] = waifu_id
                 record_couple[waifu_id] = user_id
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 return at_text_image_result(
                     user_id,
                     f"恭喜你娶到了群友！\n【{waifu_info.name}】",
@@ -236,7 +236,7 @@ async def _(event: Event):
                         last_sent_time=int(time.time()),
                         group_nickname_dict={group_id: event.nickname},
                     )
-                waifu_data.save(waifu_data_file)
+                waifu_data.save()
                 return at_text_image_result(
                     user_id,
                     f"{random.choice(bad_end_tips)}\n恭喜你娶到了你自己。",

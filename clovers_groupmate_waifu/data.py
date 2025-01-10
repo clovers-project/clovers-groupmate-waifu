@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from collections import Counter
 from pathlib import Path
 
@@ -64,7 +64,7 @@ class DataBase(BaseModel):
     protect_uids: set[str] = set()
     user_data: dict[str, User] = {}
     group_userlist: dict[str, set[str]] = {}
-    _file: Path
+    file: Path | None = Field(None, exclude=True)
 
     def update(self, user_list: list[UserInfo]):
         """user_list中的用户必须是群组的全部成员"""
@@ -99,11 +99,13 @@ class DataBase(BaseModel):
         if file.exists():
             with open(file, "r", encoding="utf8") as f:
                 data = cls.model_validate_json(f.read())
+                data.file
         else:
             file.parent.mkdir(parents=True, exist_ok=True)
-            data = cls(_file=file)
+            data = cls(file=file)
         return data
 
     def save(self):
-        with open(self._file, "w", encoding="utf8") as f:
+        assert self.file is not None, "file not set"
+        with open(self.file, "w", encoding="utf8") as f:
             f.write(self.model_dump_json(indent=4))
