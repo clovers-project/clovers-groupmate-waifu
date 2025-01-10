@@ -1,15 +1,16 @@
 [tool.poetry]
 name = "clovers-groupmate-waifu"
-version = "0.1.4r1"
+version = "0.2.0"
 description = ""
 authors = ["KarisAya <1048827424@qq.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-clovers-apscheduler = "^0.1.4"
-clovers = {extras = ["linecard", "tools"], version = "^0.1.10"}
-
+clovers = "^0.3.0"
+pydantic = "^2.10.5"
+clovers-apscheduler = "^0.2.0"
+clovers-utils = {extras = ["linecard", "tools"], version = "^0.1.0"}
 
 
 [build-system]
