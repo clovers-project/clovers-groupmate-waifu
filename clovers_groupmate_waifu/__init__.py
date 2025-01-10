@@ -67,7 +67,8 @@ async def _(event: Event):
     elif event.permission != 3:
         return "解除保护失败。你无法为其他人解除保护。"
     else:
-        waifu_data.protect_uids = protect_uids & set(event.at)
+        protect_uids.difference_update(event.at)
+        waifu_data.save()
         return f"解除保护成功！"
 
 
@@ -76,8 +77,10 @@ async def _(event: Event):
     group_userlist = waifu_data.group_userlist.get(event.group_id)
     if not group_userlist:
         return "该群无保护名单。"
-    namelist = [user.nickname(event.group_id) for user_id in group_userlist if (user := waifu_data.user_data.get(user_id))]
-    return "\n".join(namelist)
+    uids = protect_uids & group_userlist
+    if not uids:
+        return "该群无保护名单。"
+    return "\n".join(f"{waifu_data.user_data[user_id].nickname(event.group_id)} {user_id}" for user_id in uids)
 
 
 waifu_last_sent_time_filter = config_data.waifu_last_sent_time_filter
@@ -114,8 +117,7 @@ async def _(event: Event):
     couple_id = record_couple.get(user_id)
     if couple_id == user_id:
         return at_result(user_id, f"{random.choice(bad_end_tips)}\n你没有娶到群友。")
-    if event.at:  # 如果 at了别的群友
-        waifu_id = event.at[0]
+    if event.at and (waifu_id := event.at[0]) != user_id:  # 如果 at了别的群友
         if couple_id:  # 判断自己是否有 CP
             if couple_id == waifu_id:  # 如果 at 到自己的 CP：HE
                 record_lock[user_id] = couple_id
@@ -373,15 +375,15 @@ async def _(event: Event):
     return at_text_image_result(user_id, f"{tips}\n伱的涩涩对象是、{yinpa.nickname(group_id)}", await download_url(yinpa.avatar))
 
 
-@plugin.handle(["透群友记录", "色色记录", "涩涩记录"], ["group_id", "user_id", "at"])
+@plugin.handle(["色色记录", "涩涩记录"], ["group_id", "user_id"])
 async def _(event: Event):
     group_id = event.group_id
     group_record = record.setdefault(group_id, GroupData())
     output = []
     single_result = lambda uid, times: f"[color][red]♥[nowrap]\n {user_data[uid].nickname(group_id)}  [nowrap]\n[right]{times} 次"
-    record1 = ["透群友记录\n----\n"] + [single_result(k, v) for k, v in group_record.record_yinpa1.items() if v > 1]
+    record1 = ["透群友记录\n----\n"] + [single_result(k, v) for k, v in group_record.record_yinpa1.items() if v > 0]
     output.append(text_to_png("\n".join(record1)))
-    record0 = ["群友被透记录\n----\n"] + [single_result(k, v) for k, v in group_record.record_yinpa0.items() if v > 1]
+    record0 = ["群友被透记录\n----\n"] + [single_result(k, v) for k, v in group_record.record_yinpa0.items() if v > 0]
     output.append(text_to_png("\n".join(record0)))
     return output
 
