@@ -25,6 +25,8 @@ class Config(BaseModel):
     """文件记录存档路径"""
     waifu_reset: bool = True
     """是否每日重置cp记录"""
+    at_listen: bool = True
+    """是否监听 at 事件"""
     waifu_he: int = 40
     """指定成功概率"""
     waifu_be: int = 20

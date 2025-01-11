@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from io import BytesIO
 from clovers import Event as CloversEvent, Result, Plugin
-from .data import UserInfo
+from .data import MemberInfo
 
 
 class Event:
@@ -40,12 +40,11 @@ class Event:
     def avatar(self) -> str:
         return self.event.properties["avatar"]
 
-    async def group_member_list(self, group_id: str) -> list[UserInfo]:
-        user_list: list[dict] | None = await self.event.call("group_member_list", group_id)
-        return [UserInfo.model_validate(user) for user in user_list] if user_list else []
+    async def group_member_list(self, group_id: str) -> list[MemberInfo]:
+        return await self.event.call("group_member_list", group_id)
 
-    async def group_member_info(self, group_id: str, user_id: str) -> UserInfo:
-        return UserInfo.model_validate(await self.event.call("group_member_info", group_id, user_id))
+    async def group_member_info(self, group_id: str, user_id: str) -> MemberInfo:
+        return await self.event.call("group_member_info", group_id, user_id)
 
 
 def build_result(result):
