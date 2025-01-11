@@ -10,7 +10,7 @@ python = "^3.12"
 clovers = "^0.3.0"
 pydantic = "^2.10.5"
 clovers-apscheduler = "^0.2.0"
-clovers-utils = {extras = ["linecard", "tools"], version = "^0.1.0"}
+clovers-utils = {extras = ["linecard", "tools"], version = "^0.1.2"}
 
 
 [build-system]

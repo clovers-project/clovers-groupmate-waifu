@@ -1,17 +1,13 @@
 import random
 import time
+import asyncio
 from clovers_apscheduler import scheduler
 from pathlib import Path
 from clovers_utils.tools import download_url
-from clovers_utils.linecard import linecard_to_png, FontManager
-from clovers.config import config as clovers_config
 from .clovers import Event, plugin, at_result, at_text_image_result
-from .data import Member, GroupData, DataBase
-from .config import Config
-
-config_key = __package__
-waifu_config = Config.model_validate(clovers_config.get(config_key, {}))
-clovers_config[config_key] = waifu_config.model_dump()
+from .data import Member, DataBase
+from .config import waifu_config
+from .output import draw_couple, draw_list, draw_sese
 
 waifu_data = DataBase.load(Path(waifu_config.waifu_path) / "waifu_data.json")
 
@@ -223,13 +219,15 @@ async def _(event: Event):
     else:  # 如果没有 at 其他群友
         if couple_id:  # 自己有 CP 记录，直接配对到 CP，否则随机配对
             waifu = group.member(couple_id)
-        group.update(await event.group_member_list(group_id))
-        waifu_list = group.waifu_list(time.time() - waifu_last_sent_time_filter, set(group.couple.keys()))
-        if waifu_list:
-            waifu = random.choice(waifu_list)
-            group.record_cp(user_id, waifu.user_id)
         else:
-            return at_result(user_id, f"{random.choice(bad_end_tips)}\n群友已经全部配对了，下次早点来吧~")
+            group.update(await event.group_member_list(group_id))
+            waifu_list = group.waifu_list(time.time() - waifu_last_sent_time_filter, set(group.couple.keys()))
+            if waifu_list:
+                waifu = random.choice(waifu_list)
+                group.record_cp(user_id, waifu.user_id)
+            else:
+                return at_result(user_id, f"{random.choice(bad_end_tips)}\n群友已经全部配对了，下次早点来吧~")
+            waifu_data.save()
         return at_text_image_result(user_id, f"恭喜你娶到了群友：【{waifu.name}】", await download_url(waifu.avatar))
 
 
@@ -249,7 +247,7 @@ async def _(event: Event):
     if group.in_locking(user_id):
 
         def authn(event: Event):
-            return event.group_id == group_id and event.group_id == group_id
+            return event.group_id == group_id and event.user_id == user_id
 
         @plugin.temp_handle(f"分手 {group_id} {user_id}", ["group_id", "user_id"], rule=authn)
         async def _(event: Event, finish):
@@ -269,28 +267,21 @@ async def _(event: Event):
     return at_result(user_id, "你们已经是单身了。")
 
 
-fontname = waifu_config.fontname
-fallback = waifu_config.fallback_fonts
-
-font_manager = FontManager(fontname, fallback, (30, 40, 60))
-
-
-def text_to_png(text: str):
-    return linecard_to_png(text, font_manager, font_size=40, bg_color="white")
-
-
 @plugin.handle(["查看娶群友卡池"], ["group_id"])
 async def _(event: Event):
     group_id = event.group_id
     group = waifu_data.group(group_id)
-    output = ["卡池（前80位）：\n----"]
     waifus = [waifu for waifu in group.waifu_list(time.time() - waifu_last_sent_time_filter, set(group.couple.keys()))]
-    waifus.sort(key=lambda waifu: waifu.last_sent_time, reverse=True)
-    namelist = [waifu.name or "UNDEFINED" for waifu in waifus[:80]]
-    if not namelist:
+    if not waifus:
         return "群友已经被娶光了。下次早点来吧。"
-    output += namelist
-    return text_to_png("\n".join(output))
+    waifus.sort(key=lambda waifu: waifu.last_sent_time, reverse=True)
+    urls = []
+    texts: list[str] = []
+    for waifu in waifus[:50]:
+        urls.append(waifu.avatar)
+        texts.append(waifu.name or "UNDEFINED")
+    avatars = await asyncio.gather(*map(download_url, urls))
+    return draw_list("群友卡池[nowrap]\n[font][][30][color][gray]（前50位）", list(zip(avatars, texts)))
 
 
 @plugin.handle(["本群CP", "本群cp"], ["group_id"])
@@ -299,16 +290,28 @@ async def _(event: Event):
     group = waifu_data.group(group_id)
     if not group.couple:
         return "本群暂无cp哦~"
-    name_pairs = []
     seen = set()
+    p1_names: list[str] = []
+    p1_avatar_urls: list[str] = []
+    p0_names: list[str] = []
+    p0_avatar_urls: list[str] = []
+
     for uid1, uid0 in group.couple.items():
         if uid1 not in seen:
-            name_pairs.append((group.member(uid1).name, group.member(uid0).name))
+            p1 = group.member(uid1)
+            p1_names.append(p1.name)
+            p1_avatar_urls.append(p1.avatar)
+            p0 = group.member(uid0)
+            p0_names.append(p0.name)
+            p0_avatar_urls.append(p0.avatar)
             seen.add(uid1)
             seen.add(uid0)
-    output = ["本群CP：\n----"]
-    output += [f"[color][red]♥[nowrap]\n {k} | {v}" for k, v in name_pairs]
-    return text_to_png("\n".join(output))
+    p1_avatars, p0_avatars = await asyncio.gather(
+        asyncio.gather(*map(download_url, p1_avatar_urls)),
+        asyncio.gather(*map(download_url, p0_avatar_urls)),
+    )
+
+    return draw_couple("本群CP", list(zip(p1_avatars, p1_names, p0_avatars, p0_names)))
 
 
 yinpa_he = waifu_config.yinpa_he
@@ -352,12 +355,20 @@ async def _(event: Event):
     group_id = event.group_id
     group = waifu_data.group(group_id)
     output = []
-    single_result = lambda uid, times: f"[color][red]♥[nowrap]\n {group.member(uid).name}  [nowrap]\n[right]{times} 次"
-    record1 = ["透群友记录\n----\n"] + [single_result(uid, times) for uid, times in group.yinpa1.items() if times > 0]
-    output.append(text_to_png("\n".join(record1)))
-    record0 = ["群友被透记录\n----\n"] + [single_result(uid, times) for uid, times in group.yinpa0.items() if times > 0]
-    output.append(text_to_png("\n".join(record0)))
-    return output
+
+    async def single_result(uid: str, times: int):
+        member = group.member(uid)
+        return await download_url(member.avatar), f"[color][red]♥[nowrap]\n {member.name}[nowrap]\n[right]{times} 次"
+
+    p1_data, p0_data = await asyncio.gather(
+        asyncio.gather(*[single_result(uid, times) for uid, times in group.yinpa1.items() if times > 0]),
+        asyncio.gather(*[single_result(uid, times) for uid, times in group.yinpa0.items() if times > 0]),
+    )
+    if p1_data:
+        output.append(draw_sese("透群友记录", p1_data))
+    if p0_data:
+        output.append(draw_sese("群友被透记录", p0_data))
+    return output or "暂无记录"
 
 
 __plugin__ = plugin
