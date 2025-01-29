@@ -277,11 +277,11 @@ async def _(event: Event):
     waifus.sort(key=lambda waifu: waifu.last_sent_time, reverse=True)
     urls = []
     texts: list[str] = []
-    for waifu in waifus[:50]:
+    for waifu in waifus[:20]:
         urls.append(waifu.avatar)
         texts.append(waifu.name or "UNDEFINED")
     avatars = await asyncio.gather(*map(download_url, urls))
-    return draw_list("群友卡池[nowrap]\n[font][][30][color][gray]（前50位）", list(zip(avatars, texts)))
+    return draw_list("群友卡池[font size = 30,color = gray]（前20位）", list(zip(avatars, texts)))
 
 
 @plugin.handle(["本群CP", "本群cp"], ["group_id"])
@@ -358,7 +358,7 @@ async def _(event: Event):
 
     async def single_result(uid: str, times: int):
         member = group.member(uid)
-        return await download_url(member.avatar), f"[color][red]♥[nowrap]\n {member.name}[nowrap]\n[right]{times} 次"
+        return await download_url(member.avatar), f"[font color = red]♥[font color = black] {member.name}[right]{times} 次"
 
     p1_data, p0_data = await asyncio.gather(
         asyncio.gather(*[single_result(uid, times) for uid, times in group.yinpa1.items() if times > 0]),
@@ -369,6 +369,5 @@ async def _(event: Event):
     if p0_data:
         output.append(draw_sese("群友被透记录", p0_data))
     return output or "暂无记录"
-
 
 __plugin__ = plugin
