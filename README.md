@@ -79,6 +79,8 @@ waifu_last_sent_time_filter = 2592000
 yinpa_he = 50
 # 指定cp涩涩成功率
 yinpa_cp = 50
+# 背景图片
+bg_image = "./data/waifu/bg.png"
 ```
 
 </details>
