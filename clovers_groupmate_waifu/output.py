@@ -27,7 +27,9 @@ def draw_couple(title: str, data: list[tuple[bytes | None, str, bytes | None, st
         draw.text((520, y + 10), text0, fill=(0, 0, 0), font=font)
         y += 80
     textcard = linecard(title, font_manager, font_size=60, width=880)
-    return info_splicing([textcard, canvas], BG_path=bg_image, spacing=10, BG_type="GAUSS: 8")
+    output = BytesIO()
+    info_splicing([textcard, canvas], BG_path=bg_image, spacing=10, BG_type="GAUSS: 8").save(output, format="PNG")
+    return output
 
 
 def draw_list(title: str, data: list[tuple[bytes | None, str]]) -> BytesIO:
@@ -43,10 +45,12 @@ def draw_list(title: str, data: list[tuple[bytes | None, str]]) -> BytesIO:
         draw.text((80, y + 10), text, fill=(0, 0, 0), font=font)
         y += 80
     textcard = linecard(title, font_manager, font_size=60, width=880)
-    return info_splicing([textcard, canvas], BG_path=bg_image, spacing=10, BG_type="GAUSS: 8")
+    output = BytesIO()
+    info_splicing([textcard, canvas], BG_path=bg_image, spacing=10, BG_type="GAUSS: 8").save(output, format="PNG")
+    return output
 
 
-def draw_sese(title: str, data: list[tuple[bytes | None, str]]):
+def draw_sese(title: str, data: list[tuple[bytes | None, str]]) -> BytesIO:
     canvas = Image.new("RGBA", (880, 80 * len(data) + 20))
     y = 20
     circle_mask = Image.new("RGBA", (60, 60), (255, 255, 255, 0))
@@ -57,4 +61,6 @@ def draw_sese(title: str, data: list[tuple[bytes | None, str]]):
         canvas.paste(linecard(text, font_manager, font_size=40, width=800, padding=(0, 0)), (80, y + 10))
         y += 80
     textcard = linecard(title, font_manager, font_size=80, width=880)
-    return info_splicing([textcard, canvas], BG_path=bg_image, spacing=10, BG_type="GAUSS: 8")
+    output = BytesIO()
+    info_splicing([textcard, canvas], BG_path=bg_image, spacing=10, BG_type="GAUSS: 8").save(output, format="PNG")
+    return output

@@ -1,6 +1,6 @@
 [project]
 name = "clovers-groupmate-waifu"
-version = "0.2.1"
+version = "0.2.2"
 description = ""
 authors = [{ name = "KarisAya", email = "1048827424@qq.com" }]
 readme = "README.md"
@@ -9,7 +9,7 @@ dependencies = [
     "clovers (>=0.3.4,<0.4.0)",
     "pydantic (>=2.10.6,<3.0.0)",
     "clovers-apscheduler (>=0.2.0,<0.3.0)",
-    "clovers-utils[linecard,tools] (>=0.2.0,<0.3.0)",
+    "clovers-utils[linecard,tools] (>=0.2.3,<0.3.0)",
 ]
 
 
