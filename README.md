@@ -1,6 +1,6 @@
 <div align="center">
 
-# Clovers-Groupmate-WAIFU
+# Clovers-Groupmate-Waifu
 
 _✨ 娶群友 ✨_
 
