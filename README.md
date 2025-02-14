@@ -1,23 +1,25 @@
 <div align="center">
 
-# clovers-groupmate-waifu
+# Clovers-Groupmate-WAIFU
 
 _✨ 娶群友 ✨_
 
-<img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="python">
-<a href="./LICENSE"><img src="https://img.shields.io/github/license/KarisAya/clovers_groupmate_waifu.svg" alt="license"></a>
-<a href="https://pypi.python.org/pypi/clovers_groupmate_waifu"><img src="https://img.shields.io/pypi/v/clovers_groupmate_waifu.svg" alt="pypi"></a>
-<a href="https://pypi.python.org/pypi/clovers_groupmate_waifu"><img src="https://img.shields.io/pypi/dm/clovers_groupmate_waifu" alt="pypi download"></a>
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)
+[![pypi](https://img.shields.io/pypi/v/clovers_groupmate_waifu.svg)](https://pypi.python.org/pypi/clovers_groupmate_waifu)
+[![pypi download](https://img.shields.io/pypi/dm/clovers_groupmate_waifu)](https://pypi.python.org/pypi/clovers_groupmate_waifu)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![Github](https://img.shields.io/badge/GitHub-Clovers-00CC33?logo=github)](https://github.com/clovers-project/clovers)
+[![license](https://img.shields.io/github/license/clovers-project/clovers-groupmate-waifu.svg)](./LICENSE)
 
 </div>
 
-## 💿 安装
+# 安装
 
 ```bash
 pip install clovers_groupmate_waifu
 ```
 
-## ⚙️ 配置
+# 配置
 
 <details>
 
@@ -85,9 +87,9 @@ bg_image = "./data/waifu/bg.png"
 
 </details>
 
-## 🎉 功能介绍
+# 功能介绍
 
-### 锁定机制
+## 锁定机制
 
 如果是通过@成功娶到的群友会和自己进入锁定。
 
@@ -142,13 +144,3 @@ ntr ~~宫吧老哥狂喜版~~，每次抽到的结果都不一样。
 `查看娶群友保护名单`
 
 查看娶群友保护的保护名单
-
-## 📞 联系
-
-如有建议，bug 反馈等可以加群
-
-机器人 bug 研究中心（闲聊群） 744751179
-
-永恒之城（测试群） 724024810
-
-![群号](https://github.com/KarisAya/clovers/blob/master/%E9%99%84%E4%BB%B6/qrcode_1676538742221.jpg)
