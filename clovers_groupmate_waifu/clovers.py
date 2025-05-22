@@ -9,8 +9,8 @@ class Event:
         self.event: CloversEvent = event
 
     @property
-    def command(self) -> str:
-        return self.event.raw_command
+    def message(self) -> str:
+        return self.event.message
 
     @property
     def user_id(self) -> str:
@@ -65,7 +65,8 @@ def build_result(result):
         return Result("segmented", output())
 
 
-plugin = Plugin(build_event=lambda event: Event(event), build_result=build_result)
+def create_plugin() -> Plugin:
+    return Plugin(build_event=lambda event: Event(event), build_result=build_result)
 
 
 def at_text_image_result(at: str, text: str, image: bytes | None):

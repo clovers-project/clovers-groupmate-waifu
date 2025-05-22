@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from clovers.config import config as clovers_config
 
 
 class Config(BaseModel):
@@ -76,8 +75,3 @@ class Config(BaseModel):
     """指定cp涩涩成功率"""
     bg_image: str = "./data/waifu/bg.png"
     """背景图片"""
-
-
-config_key = __package__
-waifu_config = Config.model_validate(clovers_config.get(config_key, {}))
-clovers_config[config_key] = waifu_config.model_dump()
