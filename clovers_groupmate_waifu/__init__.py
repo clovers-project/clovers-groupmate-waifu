@@ -5,7 +5,7 @@ from pathlib import Path
 from clovers_apscheduler import scheduler
 from .output import LinecardDraw
 from .utils import utils_startup, utils_shutdown, download_url, download_urls
-from clovers import TempHandle
+from clovers import Plugin, TempHandle
 from .clovers import Event, create_plugin, at_result, at_text_image_result
 from .data import Member, DataBase
 from clovers.config import Config as CloversConfig
@@ -71,12 +71,16 @@ plugin = create_plugin()
 plugin.startup(utils_startup)
 plugin.shutdown(utils_shutdown)
 
+type Rule = Plugin.Rule.Checker[Event]
+
+is_group: Rule = lambda e: bool(e.group_id is not None)
+to_me: Rule = lambda e: e.to_me
+
+
 if at_listen:
+    has_at: Rule = lambda e: bool(e.at)
 
-    def has_at(event: Event):
-        return bool(event.at)
-
-    @plugin.handle(None, ["group_id", "user_id", "at"], rule=has_at)
+    @plugin.handle(None, ["group_id", "user_id", "at"], rule=[is_group, has_at])
     async def _(event: Event):
         group_id = event.group_id
         user_id = event.user_id
@@ -96,7 +100,7 @@ async def _(event: Event):
     return "娶群友记录已重置"
 
 
-@plugin.handle(["设置娶群友保护"], ["permission", "user_id", "at"])
+@plugin.handle(["设置娶群友保护"], ["permission", "user_id", "at"], rule=is_group)
 async def _(event: Event):
     if not event.at:
         protect_uids.add(event.user_id)
@@ -108,7 +112,7 @@ async def _(event: Event):
     return "保护成功！"
 
 
-@plugin.handle(["解除娶群友保护"], ["permission", "nickname", "user_id", "at"])
+@plugin.handle(["解除娶群友保护"], ["permission", "nickname", "user_id", "at"], rule=is_group)
 async def _(event: Event):
     if not event.at:
         if event.user_id in protect_uids:
@@ -123,7 +127,7 @@ async def _(event: Event):
     return f"解除保护成功！"
 
 
-@plugin.handle(["查看娶群友保护名单"], ["group_id"])
+@plugin.handle(["查看娶群友保护名单"], ["group_id"], rule=is_group)
 async def _(event: Event):
     group = groups.get(event.group_id)
     if not group:
@@ -145,7 +149,7 @@ def statistic(member: Member, waifu: Member):
         yield f"ta今天@你{waifu.today_at_count[member.user_id]}次，总计@你{be_at_count}次"
 
 
-@plugin.handle(["娶群友"], ["group_id", "user_id", "at", "avatar"])
+@plugin.handle(["娶群友"], ["group_id", "user_id", "at", "avatar"], rule=is_group)
 async def _(event: Event):
     group_id = event.group_id
     user_id = event.user_id
@@ -158,7 +162,7 @@ async def _(event: Event):
             if couple_id == waifu_id:  # 如果 at 到自己的 CP 直接进入 HE
                 group.locked_couple[user_id] = couple_id
                 waifu = group.member(couple_id)
-                waifu.update(await event.group_member_info(group_id, couple_id))
+                waifu.update(await event.call("group_member_info", group_id, couple_id))
                 member = group.member(user_id)
                 waifu_data.save()
                 message = [f"你们已经是CP了哦~\n你的CP是【{waifu.name}】"]
@@ -170,7 +174,7 @@ async def _(event: Event):
                 if randvalue <= waifu_he:  # 成功指定
                     group.record_lock_cp(user_id, waifu_id)
                     waifu = group.member(waifu_id)
-                    waifu.update(await event.group_member_info(group_id, waifu_id))
+                    waifu.update(await event.call("group_member_info", group_id, waifu_id))
                     waifu_data.save()
                     return at_text_image_result(user_id, f"恭喜你娶到了群友！\n【{waifu.name}】", await download_url(waifu.avatar))
                 elif randvalue <= waifu_be:  # 锁定单身
@@ -195,7 +199,7 @@ async def _(event: Event):
             if waifus_waifu_id == waifu_id:  # 对方被锁定单身立即配对
                 group.record_lock_cp(user_id, waifu_id)
                 waifu = group.member(waifu_id)
-                waifu.update(await event.group_member_info(group_id, waifu_id))
+                waifu.update(await event.call("group_member_info", group_id, waifu_id))
                 waifu_data.save()
                 return at_text_image_result(user_id, f"恭喜你娶到了群友！\n【{waifu.name}】", await download_url(waifu.avatar))
             waifus_waifu = group.member(waifus_waifu_id)
@@ -206,7 +210,7 @@ async def _(event: Event):
             if randvalue <= waifu_ntr:  # 触发 NTR HE 判定
                 group.disband(waifu_id)
                 waifu = group.member(waifu_id)
-                waifu.update(await event.group_member_info(group_id, waifu_id))
+                waifu.update(await event.call("group_member_info", group_id, waifu_id))
                 group.record_lock_cp(user_id, waifu_id)
                 waifu_data.save()
                 tips += f"\n但是...\n恭喜你抢到了群友{waifu.name}"
@@ -222,7 +226,7 @@ async def _(event: Event):
             if randvalue <= waifu_he:  # 成功指定
                 group.record_lock_cp(user_id, waifu_id)
                 waifu = group.member(waifu_id)
-                waifu.update(await event.group_member_info(group_id, waifu_id))
+                waifu.update(await event.call("group_member_info", group_id, waifu_id))
                 waifu_data.save()
                 return at_text_image_result(user_id, f"恭喜你娶到了群友！\n【{waifu.name}】", await download_url(waifu.avatar))
             elif randvalue <= waifu_be:  # 锁定单身
@@ -240,7 +244,7 @@ async def _(event: Event):
         if couple_id:  # 自己有 CP 记录，直接配对到 CP，否则随机配对
             waifu = group.member(couple_id)
         else:
-            group.update(await event.group_member_list(group_id))
+            group.update(await event.call("group_member_list", group_id))
             waifu_list = group.waifu_list(time.time() - waifu_last_sent_time_filter, set(group.couple.keys()))
             if waifu_list:
                 waifu = random.choice(waifu_list)
@@ -251,11 +255,7 @@ async def _(event: Event):
         return at_text_image_result(user_id, f"恭喜你娶到了群友：【{waifu.name}】", await download_url(waifu.avatar))
 
 
-def to_me(event: Event):
-    return event.to_me
-
-
-def identify(group_id: str, user_id: str):
+def identify(group_id: str, user_id: str) -> Rule:
     def rule(event: Event):
         return event.group_id == group_id and event.user_id == user_id
 
@@ -274,7 +274,7 @@ async def confirm(event: Event, handle: TempHandle):
             return at_result(event.user_id, "你们要幸福哦~")
 
 
-@plugin.handle(["离婚", "分手"], ["group_id", "user_id", "to_me"], rule=to_me)
+@plugin.handle(["离婚", "分手"], ["group_id", "user_id", "to_me"], rule=[is_group, to_me])
 async def _(event: Event):
     group_id = event.group_id
     user_id = event.user_id
@@ -290,7 +290,7 @@ async def _(event: Event):
     return at_result(user_id, "你们已经是单身了。")
 
 
-@plugin.handle(["查看娶群友卡池"], ["group_id"])
+@plugin.handle(["查看娶群友卡池"], ["group_id"], rule=is_group)
 async def _(event: Event):
     group_id = event.group_id
     group = waifu_data.group(group_id)
@@ -307,7 +307,7 @@ async def _(event: Event):
     return draw.waifu_list("群友卡池[font size = 30,color = gray]（前20位）", list(zip(avatars, texts)))
 
 
-@plugin.handle(["本群CP", "本群cp"], ["group_id"])
+@plugin.handle(["本群CP", "本群cp"], ["group_id"], rule=is_group)
 async def _(event: Event):
     group_id = event.group_id
     group = waifu_data.group(group_id)
@@ -335,7 +335,7 @@ async def _(event: Event):
     return draw.couple("本群CP", list(zip(p1_avatars, p1_names, p0_avatars, p0_names)))
 
 
-@plugin.handle(["透群友"], ["group_id", "user_id", "at"])
+@plugin.handle(["透群友"], ["group_id", "user_id", "at"], rule=is_group)
 async def _(event: Event):
     group_id = event.group_id
     user_id = event.user_id
@@ -348,9 +348,9 @@ async def _(event: Event):
         if random.randint(1, 100) >= checkpoint:
             return at_result(user_id, "不可以涩涩")
         pet = group.member(pet_id)
-        pet.update(await event.group_member_info(group_id, pet_id))
+        pet.update(await event.call("group_member_info", group_id, pet_id))
     else:
-        group.update(await event.group_member_list(group_id))
+        group.update(await event.call("group_member_list", group_id))
         pets = group.waifu_list(time.time() - waifu_last_sent_time_filter, set(group.locked_couple.keys()))
         if not pets:
             return "这里已经没有人了，下次早点来吧~"
@@ -367,7 +367,7 @@ async def _(event: Event):
     return at_text_image_result(user_id, f"{tips}\n你的涩涩对象是：【{pet.name}】", await download_url(pet.avatar))
 
 
-@plugin.handle(["色色记录", "涩涩记录"], ["group_id"])
+@plugin.handle(["色色记录", "涩涩记录"], ["group_id"], rule=is_group)
 async def _(event: Event):
     group_id = event.group_id
     group = waifu_data.group(group_id)
