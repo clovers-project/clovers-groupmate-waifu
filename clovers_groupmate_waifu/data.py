@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from collections import Counter
 from pathlib import Path
 from typing import TypedDict
@@ -31,6 +31,11 @@ class Member(BaseModel):
     """@对方的次数"""
     today_at_count: Counter[str] = Counter()
     """今日@对方的次数"""
+
+    @field_validator("nickname", "card", "avatar", mode="before")
+    @classmethod
+    def _(cls, v: str | None) -> str:
+        return v or ""
 
     @property
     def name(self):
@@ -126,7 +131,7 @@ class DataBase(BaseModel):
     def load(cls, path: str | Path):
         file = Path(path)
         if file.exists():
-            with open(file, "r", encoding="utf8") as f:
+            with file.open("r", encoding="utf8") as f:
                 data = cls.model_validate_json(f.read())
                 data.file = file
         else:
@@ -136,7 +141,7 @@ class DataBase(BaseModel):
 
     def save(self):
         assert self.file is not None, "file not set"
-        with open(self.file, "w", encoding="utf8") as f:
+        with self.file.open("r", encoding="utf8") as f:
             f.write(self.model_dump_json(indent=4))
 
     def group(self, group_id: str):

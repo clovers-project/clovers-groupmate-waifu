@@ -67,6 +67,7 @@ else:
 scheduler.add_job(reset_data, "cron", hour=0, misfire_grace_time=120)
 
 plugin = create_plugin()
+plugin.require("clovers-apscheduler")
 plugin.startup(utils_startup)
 plugin.shutdown(utils_shutdown)
 
