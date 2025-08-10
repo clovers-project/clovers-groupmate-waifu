@@ -141,7 +141,7 @@ class DataBase(BaseModel):
 
     def save(self):
         assert self.file is not None, "file not set"
-        with self.file.open("r", encoding="utf8") as f:
+        with self.file.open("w", encoding="utf8") as f:
             f.write(self.model_dump_json(indent=4))
 
     def group(self, group_id: str):
