@@ -6,13 +6,12 @@ authors = [{ name = "KarisAya", email = "karisaya@foxmail.com" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0.0"
 dependencies = [
-    "clovers (>=0.5.0,<0.6.0)",
-    "clovers-apscheduler (>=0.3,<0.4)",
-    "clovers-client (>=0.3.1,<0.4)",
+    "pydantic (>=2.13.0,<3.0.0)",
     "linecard (>=0.2.0,<0.3.0)",
     "httpx (>=0.28.1,<0.29.0)",
-    "pydantic (>=2.13.0,<3.0.0)",
-
+    "clovers (>=0.5.1,<0.6.0)",
+    "clovers-apscheduler (>=0.3,<0.4)",
+    "clovers-client (>=0.3.2,<0.4)",
 ]
 
 
