@@ -1,16 +1,7 @@
+from pathlib import Path
 from pydantic import BaseModel, Field, field_validator
 from collections import Counter
-from pathlib import Path
-from typing import TypedDict
-
-
-class MemberInfo(TypedDict):
-    group_id: str
-    user_id: str
-    nickname: str
-    card: str
-    avatar: str
-    last_sent_time: int
+from clovers_client.event import MemberInfo
 
 
 class Member(BaseModel):
@@ -148,3 +139,22 @@ class DataBase(BaseModel):
         if group_id not in self.groups:
             self.groups[group_id] = GroupData(group_id=group_id)
         return self.groups[group_id]
+
+    def daily_refresh_reset(self):
+        for group in self.groups.values():
+            for self_id, waifu_id in group.couple.items():
+                member = group.member(self_id)
+                member.daycp_count[waifu_id] += 1
+                member.today_at_count.clear()
+            group.couple.clear()
+            group.locked_couple.clear()
+        self.save()
+
+    def daily_refresh(self):
+        for group in self.groups.values():
+            for self_id, waifu_id in group.couple.items():
+                member = group.member(self_id)
+                member.daycp_count[waifu_id] += 1
+                member.today_at_count.clear()
+            group.couple = {k: v for k, v in group.couple.items() if k != v}
+        self.save()

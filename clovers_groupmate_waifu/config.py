@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from clovers_client import Config as BaseConfig
 
 
-class Config(BaseModel):
+class Config(BaseConfig):
     fontname: str = "simsun"
     fallback_fonts: list[str] = [
         "Arial",
